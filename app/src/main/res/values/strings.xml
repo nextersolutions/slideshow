@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Slideshow</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_skip">Skip</string>
+    <string name="waiting_for_downloads">Waiting for downloads…</string>
+    <string name="title_slideshow">Slideshow</string>
+    <string name="label_screen_key">Screen key</string>
+    <string name="action_save_key">Save key</string>
+    <string name="items_downloaded">Items downloaded and ready: %s</string>
+    <string name="action_start_playback">Start playback</string>
+    <string name="no_items">No items are ready yet. Check your connection - items will appear here as they finish downloading.</string>
 </resources>
