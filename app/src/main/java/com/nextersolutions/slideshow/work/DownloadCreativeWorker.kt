@@ -1,0 +1,41 @@
+package com.nextersolutions.slideshow.work
+
+import android.content.Context
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import com.nextersolutions.slideshow.data.repository.PlaylistRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+
+/**
+ * Downloads a single creative in the background. Uses [PlaylistRepository] so
+ * that the on-disk file and the matching Room row stay in sync.
+ */
+@HiltWorker
+class DownloadCreativeWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val repository: PlaylistRepository,
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        val creativeKey = inputData.getString(KEY_CREATIVE_KEY) ?: return Result.failure()
+        return try {
+            repository.downloadCreative(creativeKey)
+            Result.success()
+        } catch (ioe: java.io.IOException) {
+            // Transient network/storage failure — let WorkManager retry with backoff.
+            if (runAttemptCount < MAX_RETRY) Result.retry() else Result.failure()
+        } catch (t: Throwable) {
+            // Non-IO errors likely won't succeed on retry.
+            Result.failure()
+        }
+    }
+
+    companion object {
+        const val KEY_CREATIVE_KEY = "creativeKey"
+        const val MAX_RETRY = 5
+        fun uniqueName(creativeKey: String) = "download-$creativeKey"
+    }
+}
