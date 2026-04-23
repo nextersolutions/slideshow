@@ -72,7 +72,7 @@ worker will retry on its next tick.
 
 ## Build
 
-The project targets AGP 9.1.1, Kotlin 2.2.10, compileSdk 36, minSdk 26.
+The project targets AGP 9.1.1, Kotlin 2.2.10, compileSdk 36, minSdk 29.
 All dependency versions are pinned in `gradle/libs.versions.toml`
 (Ktor 3.2.3, Hilt 2.57.2, KSP 2.2.10-2.0.2, Room 2.6.1, Media3 1.4.1,
 Coil 2.7.0, WorkManager 2.9.1, DataStore 1.1.1).
