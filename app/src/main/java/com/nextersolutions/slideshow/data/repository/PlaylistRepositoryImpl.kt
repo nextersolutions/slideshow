@@ -25,6 +25,9 @@ internal class PlaylistRepositoryImpl @Inject constructor(
 
     override suspend fun getItems(): List<PlaylistItemEntity> = playListLocalDataSource.getAll()
 
+    override suspend fun findByCreativeKey(creativeKey: String): PlaylistItemEntity? =
+        playListLocalDataSource.findByCreativeKey(creativeKey)
+
     override suspend fun refreshPlaylist(screenKey: String): List<String> {
         val dto = api.getPlaylist(screenKey)
 
@@ -38,7 +41,9 @@ internal class PlaylistRepositoryImpl @Inject constructor(
             }
         }
 
-        playListLocalDataSource.deleteAll()
+        val activeKeys = newEntities.map { it.creativeKey }
+
+        playListLocalDataSource.deleteStaleItems(activeKeys)
         playListLocalDataSource.upsert(newEntities)
         fileManager.pruneUnreferenced(newEntities.mapTo(hashSetOf()) { it.creativeKey })
 

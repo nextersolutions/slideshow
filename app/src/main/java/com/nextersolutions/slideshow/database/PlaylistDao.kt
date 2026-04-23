@@ -25,4 +25,10 @@ interface PlaylistDao {
 
     @Query("DELETE FROM playlist_items")
     suspend fun deleteAll()
+
+    @Query("DELETE FROM playlist_items WHERE creativeKey NOT IN (:activeKeys)")
+    suspend fun deleteStaleItems(activeKeys: List<String>)
+
+    @Query("SELECT DISTINCT creativeKey FROM playlist_items WHERE localPath IS NOT NULL")
+    suspend fun getDownloadedCreativeKeys(): List<String>
 }

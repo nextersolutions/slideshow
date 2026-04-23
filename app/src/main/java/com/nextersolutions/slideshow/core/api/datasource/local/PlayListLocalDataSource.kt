@@ -10,4 +10,6 @@ interface PlayListLocalDataSource {
     suspend fun upsert(items: List<PlaylistItemEntity>)
     suspend fun setLocalPath(creativeKey: String, path: String)
     suspend fun deleteAll()
+    suspend fun deleteStaleItems(activeKeys: List<String>)
+    suspend fun getDownloadedCreativeKeys(): List<String>
 }

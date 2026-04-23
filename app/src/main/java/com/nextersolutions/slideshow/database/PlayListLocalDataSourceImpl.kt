@@ -30,4 +30,12 @@ internal class PlayListLocalDataSourceImpl @Inject constructor(
     override suspend fun deleteAll() {
         return dao.deleteAll()
     }
+
+    override suspend fun deleteStaleItems(activeKeys: List<String>) {
+        return dao.deleteStaleItems(activeKeys)
+    }
+
+    override suspend fun getDownloadedCreativeKeys(): List<String> {
+        return dao.getDownloadedCreativeKeys()
+    }
 }

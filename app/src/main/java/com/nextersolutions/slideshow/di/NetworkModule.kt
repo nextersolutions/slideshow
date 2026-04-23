@@ -33,7 +33,7 @@ object NetworkModule {
 
         install(ContentNegotiation) { json(json) }
 
-        install(Logging) { level = LogLevel.INFO }
+        install(Logging) { level = LogLevel.ALL }
 
         install(HttpTimeout) {
             requestTimeoutMillis = 60_000

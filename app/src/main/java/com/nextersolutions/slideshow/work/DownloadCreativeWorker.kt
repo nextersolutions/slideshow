@@ -19,6 +19,10 @@ class DownloadCreativeWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val creativeKey = inputData.getString(KEY_CREATIVE_KEY) ?: return Result.failure()
         return try {
+            val existing = repository.findByCreativeKey(creativeKey)
+            if (existing?.localPath != null && java.io.File(existing.localPath).exists()) {
+                return Result.success()
+            }
             repository.downloadCreative(creativeKey)
             Result.success()
         } catch (ioe: java.io.IOException) {
