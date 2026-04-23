@@ -1,5 +1,6 @@
 package com.nextersolutions.slideshow.data.repository
 
+import android.util.Log
 import com.nextersolutions.slideshow.core.api.datasource.local.PlayListLocalDataSource
 import com.nextersolutions.slideshow.core.api.datasource.remote.RemoteDataSource
 import com.nextersolutions.slideshow.core.api.repository.PlaylistRepository
@@ -31,6 +32,7 @@ internal class PlaylistRepositoryImpl @Inject constructor(
     override suspend fun refreshPlaylist(screenKey: String): List<String> {
         val dto = api.getPlaylist(screenKey)
 
+        Log.e("refreshPlaylist", dto.playlists.toString())
         val existing = playListLocalDataSource.getAll().associateBy { it.creativeKey }
         val newEntities = dto.toEntities(screenKey) { creativeKey ->
             val cached = existing[creativeKey]?.localPath
@@ -42,12 +44,21 @@ internal class PlaylistRepositoryImpl @Inject constructor(
         }
 
         val activeKeys = newEntities.map { it.creativeKey }
-
         playListLocalDataSource.deleteStaleItems(activeKeys)
         playListLocalDataSource.upsert(newEntities)
-        fileManager.pruneUnreferenced(newEntities.mapTo(hashSetOf()) { it.creativeKey })
+        newEntities
+            .filter { it.localPath == null && fileManager.isDownloaded(it.creativeKey) }
+            .distinctBy { it.creativeKey }
+            .forEach { entity ->
+                playListLocalDataSource.setLocalPath(
+                    entity.creativeKey,
+                    fileManager.absolutePathFor(entity.creativeKey)
+                )
+            }
 
-        return newEntities
+        fileManager.pruneUnreferenced(newEntities.mapTo(hashSetOf()) { it.creativeKey })
+        val finalEntities = playListLocalDataSource.getAll()
+        return finalEntities
             .filter { it.localPath == null }
             .map { it.creativeKey }
             .distinct()

@@ -3,6 +3,7 @@ package com.nextersolutions.slideshow.ui.player
 import androidx.annotation.OptIn
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,10 +15,12 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -37,6 +40,7 @@ import com.nextersolutions.slideshow.domain.model.PlaylistItemViewData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 private const val CROSSFADE_MS = 500L
@@ -58,6 +62,9 @@ fun SlideshowPlayer(
     var slotBItem by remember { mutableStateOf<PlaylistItemViewData?>(null) }
     val alphaA = remember { Animatable(VALUE_1.toFloat()) }
     val alphaB = remember { Animatable(ZERO.toFloat()) }
+
+    var slotAReady by remember { mutableStateOf(true) }
+    var slotBReady by remember { mutableStateOf(false) }
 
     var currentIndex by remember { mutableIntStateOf(ZERO) }
     LaunchedEffect(playlist) {
@@ -85,16 +92,20 @@ fun SlideshowPlayer(
         val f1 = VALUE_1.toFloat()
 
         if (frontSlotIsA) {
+            slotBReady = nextItem.mediaType == MediaType.IMAGE
             slotBItem = nextItem
             alphaB.snapTo(f0)
+            while (!slotBReady) { delay(DELAY_50) }
             val out = launch { alphaA.animateTo(f0, tween(CROSSFADE_MS.toInt())) }
             val inn = launch { alphaB.animateTo(f1, tween(CROSSFADE_MS.toInt())) }
             out.join(); inn.join()
             slotAItem = null
             frontSlotIsA = false
         } else {
+            slotAReady = nextItem.mediaType == MediaType.IMAGE
             slotAItem = nextItem
             alphaA.snapTo(f0)
+            while (!slotAReady) { delay(DELAY_50) }
             val out = launch { alphaB.animateTo(f0, tween(CROSSFADE_MS.toInt())) }
             val inn = launch { alphaA.animateTo(f1, tween(CROSSFADE_MS.toInt())) }
             out.join(); inn.join()
@@ -123,6 +134,7 @@ fun SlideshowPlayer(
                     modifier = Modifier.fillMaxSize().alpha(alphaA.value),
                     isDriving = frontSlotIsA,
                     onVideoNearEnd = { advanceToken++ },
+                    onFirstFrameReady = { slotAReady = true },
                 )
             }
         }
@@ -133,6 +145,7 @@ fun SlideshowPlayer(
                     modifier = Modifier.fillMaxSize().alpha(alphaB.value),
                     isDriving = !frontSlotIsA,
                     onVideoNearEnd = { advanceToken++ },
+                    onFirstFrameReady = { slotBReady = true },
                 )
             }
         }
@@ -146,6 +159,7 @@ private fun MediaLayer(
     modifier: Modifier,
     isDriving: Boolean,
     onVideoNearEnd: () -> Unit,
+    onFirstFrameReady: () -> Unit,
 ) {
     when (item.mediaType) {
         MediaType.IMAGE -> {
@@ -159,12 +173,14 @@ private fun MediaLayer(
                 contentScale = ContentScale.Fit,
                 modifier = modifier,
             )
+            LaunchedEffect(item.id) { onFirstFrameReady() }
         }
         MediaType.VIDEO -> VideoLayer(
             item = item,
             modifier = modifier,
             isDriving = isDriving,
             onNearEnd = onVideoNearEnd,
+            onFirstFrameReady = onFirstFrameReady,
         )
     }
 }
@@ -176,8 +192,28 @@ private fun VideoLayer(
     modifier: Modifier,
     isDriving: Boolean,
     onNearEnd: () -> Unit,
+    onFirstFrameReady: () -> Unit,
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    val thumbnail = remember(item.localPath) {
+        mutableStateOf<android.graphics.Bitmap?>(null)
+    }
+    LaunchedEffect(item.localPath) {
+        thumbnail.value = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                android.media.MediaMetadataRetriever().use { mmr ->
+                    mmr.setDataSource(item.localPath)
+                    mmr.getFrameAtTime(0, android.media.MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                }
+            } catch (_: Exception) { null }
+        }
+    }
+
+    // Whether ExoPlayer has rendered its first real frame — once true we hide the thumbnail.
+    var playerReady by remember { mutableStateOf(false) }
+    val playerAlpha = remember { Animatable(0f) }
 
     val player = remember {
         ExoPlayer.Builder(context).build().apply {
@@ -190,6 +226,21 @@ private fun VideoLayer(
 
     DisposableEffect(player) {
         onDispose { player.release() }
+    }
+
+    LaunchedEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onRenderedFirstFrame() {
+                if (!playerReady) {
+                    playerReady = true
+                    coroutineScope.launch {
+                        playerAlpha.animateTo(1f, tween(150))
+                        onFirstFrameReady()
+                    }
+                }
+            }
+        }
+        player.addListener(listener)
     }
 
     LaunchedEffect(player, isDriving) {
@@ -220,19 +271,33 @@ private fun VideoLayer(
         }
     }
 
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            PlayerView(ctx).apply {
-                this.player = player
-                useController = false
-                setShutterBackgroundColor(android.graphics.Color.BLACK)
-                layoutParams = android.view.ViewGroup.LayoutParams(
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                )
-            }
-        },
-        update = { view -> view.player = player },
-    )
+    Box(modifier = modifier) {
+        thumbnail.value?.let { bmp ->
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(1f - playerAlpha.value),
+            )
+        }
+
+        AndroidView(
+            modifier = Modifier.fillMaxSize().alpha(playerAlpha.value),
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    this.player = player
+                    useController = false
+                    setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                    setKeepContentOnPlayerReset(true)
+                }
+            },
+            update = { view -> view.player = player },
+        )
+    }
 }
