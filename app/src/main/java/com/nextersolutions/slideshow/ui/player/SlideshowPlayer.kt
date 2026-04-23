@@ -95,9 +95,15 @@ fun SlideshowPlayer(
             slotBReady = nextItem.mediaType == MediaType.IMAGE
             slotBItem = nextItem
             alphaB.snapTo(f0)
+
             while (!slotBReady) { delay(DELAY_50) }
-            val out = launch { alphaA.animateTo(f0, tween(CROSSFADE_MS.toInt())) }
-            val inn = launch { alphaB.animateTo(f1, tween(CROSSFADE_MS.toInt())) }
+            val out = launch {
+                alphaA.animateTo(f0, tween(CROSSFADE_MS.toInt()))
+            }
+            val inn = launch {
+                alphaB.animateTo(f1, tween(CROSSFADE_MS.toInt()))
+            }
+
             out.join(); inn.join()
             slotAItem = null
             frontSlotIsA = false
@@ -105,9 +111,15 @@ fun SlideshowPlayer(
             slotAReady = nextItem.mediaType == MediaType.IMAGE
             slotAItem = nextItem
             alphaA.snapTo(f0)
+
             while (!slotAReady) { delay(DELAY_50) }
-            val out = launch { alphaB.animateTo(f0, tween(CROSSFADE_MS.toInt())) }
-            val inn = launch { alphaA.animateTo(f1, tween(CROSSFADE_MS.toInt())) }
+
+            val out = launch {
+                alphaB.animateTo(f0, tween(CROSSFADE_MS.toInt()))
+            }
+            val inn = launch {
+                alphaA.animateTo(f1, tween(CROSSFADE_MS.toInt()))
+            }
             out.join(); inn.join()
             slotBItem = null
             frontSlotIsA = true
