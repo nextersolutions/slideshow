@@ -1,15 +1,9 @@
 package com.nextersolutions.slideshow.network.dto
 
-import com.nextersolutions.slideshow.core.EMPTY
-import com.nextersolutions.slideshow.core.ZERO
+import com.nextersolutions.slideshow.core.common.EMPTY
+import com.nextersolutions.slideshow.core.common.ZERO
 import kotlinx.serialization.Serializable
 
-/**
- * Network DTOs. We parse only the fields actually used for playback:
- *  - duration, creativeKey, orderKey for each item
- * Plus wrappers for screen + playlists. Any other JSON keys are simply ignored
- * because we use ignoreUnknownKeys = true on the Json instance.
- */
 @Serializable
 data class PlaylistResponseDto(
     val playlists: List<PlaylistDto> = emptyList(),

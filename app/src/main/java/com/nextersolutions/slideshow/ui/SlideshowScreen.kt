@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nextersolutions.slideshow.R
-import com.nextersolutions.slideshow.core.EMPTY
+import com.nextersolutions.slideshow.core.common.EMPTY
 import com.nextersolutions.slideshow.ui.player.SlideshowPlayer
 import com.nextersolutions.slideshow.ui.widgets.PlaybackControls
 

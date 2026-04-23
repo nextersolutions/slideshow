@@ -11,8 +11,6 @@ class SetScreenKeyUseCase @Inject constructor(
         val trimmed = screenKey.trim()
         require(trimmed.isNotEmpty()) { "Screen key must not be empty" }
         prefs.setScreenKey(trimmed)
-        // Changing the screen means the current cached playlist is stale —
-        // fetch again right now.
         syncPlaylist(immediate = true)
     }
 }

@@ -19,13 +19,6 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Coordinates all background scheduling for the app.
- *
- * We deliberately do not use [androidx.work.PeriodicWorkRequest] because its
- * minimum interval is 15 minutes; instead we chain a [OneTimeWorkRequest] that
- * re-schedules itself via [AlarmManager] every [PERIODIC_INTERVAL_MS].
- */
 @Singleton
 class PlaylistScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -34,7 +27,6 @@ class PlaylistScheduler @Inject constructor(
     private val workManager get() = WorkManager.getInstance(context)
     private val alarmManager get() = context.getSystemService(AlarmManager::class.java)
 
-    /** Runs a playlist sync immediately (subject to WorkManager's scheduling). */
     fun enqueueImmediateSync() {
         val request = OneTimeWorkRequestBuilder<SyncPlaylistWorker>()
             .setConstraints(
@@ -56,19 +48,10 @@ class PlaylistScheduler @Inject constructor(
         )
     }
 
-    /**
-     * Schedules the next periodic sync via AlarmManager. The broadcast receiver
-     * re-enqueues a SyncPlaylistWorker and then calls back into this method,
-     * creating a self-sustaining 1-minute loop.
-     */
     fun schedulePeriodicSync() {
         val pendingIntent = periodicPendingIntent()
         val triggerAt = SystemClock.elapsedRealtime() + PERIODIC_INTERVAL_MS
 
-        // On Android 12+, setExactAndAllowWhileIdle requires SCHEDULE_EXACT_ALARM
-        // or USE_EXACT_ALARM. We declared USE_EXACT_ALARM in the manifest for
-        // the common case; fall back to inexact on devices where exact alarms
-        // aren't available to avoid crashing.
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                 !alarmManager.canScheduleExactAlarms()
@@ -86,7 +69,6 @@ class PlaylistScheduler @Inject constructor(
                 )
             }
         } catch (se: SecurityException) {
-            // Fallback if a rare OEM revokes our permission at runtime.
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
                 triggerAt,
@@ -132,7 +114,6 @@ class PlaylistScheduler @Inject constructor(
     }
 
     companion object {
-        /** One minute by default, as requested by the spec. */
         const val PERIODIC_INTERVAL_MS = 60_000L
         private const val REQUEST_CODE = 0x5117
     }

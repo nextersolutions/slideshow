@@ -5,12 +5,6 @@ import com.nextersolutions.slideshow.domain.model.MediaType
 import com.nextersolutions.slideshow.domain.model.PlaylistItemViewData
 import com.nextersolutions.slideshow.network.dto.PlaylistResponseDto
 
-/**
- * Flattens the multi-playlist network response into a single ordered list of
- * entities. Within the response, [PlaylistItemDto.orderKey] already provides a
- * global ordering across all playlists, so we can use it directly as the Room
- * primary key.
- */
 object PlaylistMappers {
 
     fun PlaylistResponseDto.toEntities(
@@ -33,12 +27,6 @@ object PlaylistMappers {
             .sortedBy { it.orderKey }
             .toList()
 
-    /**
-     * Converts entities to ViewData, keeping only items that have been fully
-     * downloaded (non-null [PlaylistItemEntity.localPath]). Anything still
-     * pending is filtered out — it will appear once the download worker has
-     * set its local path.
-     */
     fun List<PlaylistItemEntity>.toViewData(): List<PlaylistItemViewData> =
         mapNotNull { entity ->
             val path = entity.localPath ?: return@mapNotNull null

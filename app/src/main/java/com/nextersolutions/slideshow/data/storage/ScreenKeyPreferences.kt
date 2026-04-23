@@ -13,11 +13,6 @@ import javax.inject.Singleton
 
 private val Context.dataStore by preferencesDataStore(name = "slideshow_prefs")
 
-/**
- * Small wrapper around DataStore for persisting the screen key the user enters.
- * When nothing has been stored yet, [DEFAULT_SCREEN_KEY] is returned which
- * satisfies "set it as the default on first launch".
- */
 @Singleton
 class ScreenKeyPreferences @Inject constructor(
     @ApplicationContext private val context: Context,

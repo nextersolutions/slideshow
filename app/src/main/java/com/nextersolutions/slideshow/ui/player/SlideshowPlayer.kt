@@ -28,10 +28,10 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.nextersolutions.slideshow.core.DELAY_50
-import com.nextersolutions.slideshow.core.SECOND
-import com.nextersolutions.slideshow.core.VALUE_1
-import com.nextersolutions.slideshow.core.ZERO
+import com.nextersolutions.slideshow.core.common.DELAY_50
+import com.nextersolutions.slideshow.core.common.SECOND
+import com.nextersolutions.slideshow.core.common.VALUE_1
+import com.nextersolutions.slideshow.core.common.ZERO
 import com.nextersolutions.slideshow.domain.model.MediaType
 import com.nextersolutions.slideshow.domain.model.PlaylistItemViewData
 import kotlinx.coroutines.delay

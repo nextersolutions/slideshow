@@ -4,14 +4,11 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.nextersolutions.slideshow.data.repository.PlaylistRepository
+import com.nextersolutions.slideshow.core.api.repository.PlaylistRepository
+import com.nextersolutions.slideshow.data.repository.PlaylistRepositoryImpl
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
-/**
- * Downloads a single creative in the background. Uses [PlaylistRepository] so
- * that the on-disk file and the matching Room row stay in sync.
- */
 @HiltWorker
 class DownloadCreativeWorker @AssistedInject constructor(
     @Assisted context: Context,
@@ -25,10 +22,8 @@ class DownloadCreativeWorker @AssistedInject constructor(
             repository.downloadCreative(creativeKey)
             Result.success()
         } catch (ioe: java.io.IOException) {
-            // Transient network/storage failure — let WorkManager retry with backoff.
             if (runAttemptCount < MAX_RETRY) Result.retry() else Result.failure()
         } catch (t: Throwable) {
-            // Non-IO errors likely won't succeed on retry.
             Result.failure()
         }
     }

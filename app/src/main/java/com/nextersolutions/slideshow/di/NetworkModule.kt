@@ -21,9 +21,6 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideJson(): Json = Json {
-        // The server sends many fields we don't care about (expireDate, dataSize,
-        // creativeProperties, etc.) — ignore them so a schema change on the
-        // server does not break parsing.
         ignoreUnknownKeys = true
         explicitNulls = false
         coerceInputValues = true
@@ -39,7 +36,6 @@ object NetworkModule {
         install(Logging) { level = LogLevel.INFO }
 
         install(HttpTimeout) {
-            // Creative downloads can be large (20+ MB), so be generous here.
             requestTimeoutMillis = 60_000
             connectTimeoutMillis = 20_000
             socketTimeoutMillis = 60_000

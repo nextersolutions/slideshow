@@ -1,4 +1,4 @@
-package com.nextersolutions.slideshow.core
+package com.nextersolutions.slideshow.core.common
 
 const val EMPTY = ""
 const val TIMEOUT = 5_000L

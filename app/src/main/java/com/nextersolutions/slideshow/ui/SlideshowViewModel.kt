@@ -2,9 +2,9 @@ package com.nextersolutions.slideshow.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nextersolutions.slideshow.core.EMPTY
-import com.nextersolutions.slideshow.core.TIMEOUT
-import com.nextersolutions.slideshow.core.VALUE_1
+import com.nextersolutions.slideshow.core.common.EMPTY
+import com.nextersolutions.slideshow.core.common.TIMEOUT
+import com.nextersolutions.slideshow.core.common.VALUE_1
 import com.nextersolutions.slideshow.domain.model.PlaylistItemViewData
 import com.nextersolutions.slideshow.domain.usecase.ObservePlaylistUseCase
 import com.nextersolutions.slideshow.domain.usecase.ObserveScreenKeyUseCase
